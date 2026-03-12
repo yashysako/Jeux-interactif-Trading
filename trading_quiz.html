@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading School — Jeu d'Apprentissage</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --card: #181c27;
+  --card2: #1e2436;
+  --border: #252d42;
+  --accent: #f0b429;
+  --accent2: #3ecf8e;
+  --blue: #4f8ef7;
+  --red: #f16b6b;
+  --green: #3ecf8e;
+  --text: #e8eaf0;
+  --muted: #5a6480;
+  --muted2: #8892a8;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle dot grid background */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: radial-gradient(circle, rgba(240,180,41,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ===== SCREENS ===== */
+.screen { display:none; position:relative; z-index:1; }
+.screen.active { display:flex; flex-direction:column; min-height:100vh; }
+
+/* ===== WELCOME SCREEN ===== */
+#welcome {
+  align-items:center;
+  justify-content:center;
+  padding: 40px 20px;
+  text-align:center;
+}
+
+.logo-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.3);
+  border-radius:50px;
+  padding: 8px 20px;
+  margin-bottom: 32px;
+  font-family:'DM Mono', monospace;
+  font-size:0.7rem;
+  letter-spacing:2px;
+  color: var(--accent);
+  animation: fadeDown 0.6s ease both;
+}
+
+.logo-dot {
+  width:8px; height:8px;
+  background: var(--accent);
+  border-radius:50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+@keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes popIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+@keyframes slideRight { from{width:0} to{width:var(--w)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+@keyframes correctPop { 0%{transform:scale(1)} 50%{transform:scale(1.04)} 100%{transform:scale(1)} }
+
+.welcome-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  line-height: 0.9;
+  letter-spacing: 2px;
+  animation: fadeUp 0.7s 0.1s ease both;
+}
+.welcome-title span { color: var(--accent); }
+
+.welcome-sub {
+  font-size: 1.05rem;
+  color: var(--muted2);
+  margin: 20px 0 40px;
+  max-width: 480px;
+  line-height: 1.7;
+  animation: fadeUp 0.7s 0.2s ease both;
+}
+
+.modules-preview {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:44px;
+  animation: fadeUp 0.7s 0.3s ease both;
+}
+.module-tag {
+  padding: 8px 18px;
+  border-radius:8px;
+  border: 1px solid var(--border);
+  font-size:0.82rem;
+  font-weight:600;
+  color: var(--muted2);
+  background: var(--card);
+  display:flex; align-items:center; gap:8px;
+}
+.module-tag .dot { width:6px;height:6px;border-radius:50%; }
+
+.start-btn {
+  display:inline-flex; align-items:center; gap:12px;
+  background: var(--accent);
+  color: #0f1117;
+  border:none;
+  padding: 18px 48px;
+  border-radius:12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:1.05rem;
+  font-weight:700;
+  cursor:pointer;
+  transition: all 0.2s;
+  letter-spacing:0.5px;
+  animation: fadeUp 0.7s 0.4s ease both;
+}
+.start-btn:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(240,180,41,0.35); }
+.start-btn:active { transform:translateY(0); }
+
+/* ===== GAME SCREEN ===== */
+#game {
+  max-width: 760px;
+  margin: 0 auto;
+  width:100%;
+  padding: 24px 20px 40px;
+}
+
+/* TOP BAR */
+.topbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:28px;
+  gap:16px;
+}
+.module-label {
+  font-family:'DM Mono',monospace;
+  font-size:0.65rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color: var(--accent);
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.2);
+  padding: 5px 12px;
+  border-radius:6px;
+  white-space:nowrap;
+}
+.progress-wrap { flex:1; }
+.progress-info {
+  display:flex; justify-content:space-between;
+  font-family:'DM Mono',monospace;
+  font-size:0.65rem;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.progress-bar {
+  height:4px;
+  background: var(--border);
+  border-radius:2px;
+  overflow:hidden;
+}
+.progress-fill {
+  height:100%;
+  background: linear-gradient(90deg, var(--accent), #f5c842);
+  border-radius:2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.score-badge {
+  font-family:'DM Mono',monospace;
+  font-size:0.75rem;
+  font-weight:500;
+  color:var(--accent2);
+  background: rgba(62,207,142,0.1);
+  border:1px solid rgba(62,207,142,0.2);
+  padding:5px 12px;
+  border-radius:6px;
+  white-space:nowrap;
+}
+
+/* QUESTION CARD */
+.q-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius:20px;
+  padding: 28px;
+  margin-bottom:20px;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.q-number {
+  font-family:'DM Mono',monospace;
+  font-size:0.65rem;
+  color:var(--muted);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+.q-text {
+  font-size:1.15rem;
+  font-weight:600;
+  line-height:1.55;
+  color:var(--text);
+  margin-bottom:20px;
+}
+
+/* SVG CHART CONTAINER */
+.chart-container {
+  background: #0a0d14;
+  border: 1px solid var(--border);
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:20px;
+  overflow:hidden;
+}
+.chart-label {
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;
+  color:var(--muted);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.chart-container svg { display:block; width:100%; }
+
+/* OPTIONS */
+.options { display:flex; flex-direction:column; gap:10px; }
+
+.option-btn {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:16px 20px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius:12px;
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:0.92rem;
+  font-weight:400;
+  cursor:pointer;
+  transition: all 0.18s;
+  text-align:left;
+  width:100%;
+}
+.option-btn:hover:not(:disabled) {
+  border-color: rgba(240,180,41,0.5);
+  background: rgba(240,180,41,0.05);
+  transform: translateX(4px);
+}
+.option-btn:disabled { cursor:default; }
+
+.option-letter {
+  width:30px; height:30px;
+  border-radius:8px;
+  background: var(--border);
+  border: 1px solid var(--muted);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'DM Mono',monospace;
+  font-size:0.72rem;
+  font-weight:500;
+  color:var(--muted2);
+  flex-shrink:0;
+  transition: all 0.18s;
+}
+
+.option-btn.correct {
+  border-color: var(--green);
+  background: rgba(62,207,142,0.1);
+  animation: correctPop 0.4s ease;
+}
+.option-btn.correct .option-letter {
+  background: var(--green);
+  color: #0f1117;
+  border-color:transparent;
+}
+.option-btn.wrong {
+  border-color: var(--red);
+  background: rgba(241,107,107,0.08);
+  animation: shake 0.4s ease;
+}
+.option-btn.wrong .option-letter {
+  background: var(--red);
+  color:#fff;
+  border-color:transparent;
+}
+
+/* FEEDBACK BOX */
+.feedback-box {
+  border-radius:12px;
+  padding:18px 20px;
+  margin-bottom:20px;
+  display:none;
+  animation: fadeUp 0.3s ease both;
+}
+.feedback-box.show { display:block; }
+.feedback-box.correct-fb {
+  background: rgba(62,207,142,0.08);
+  border: 1px solid rgba(62,207,142,0.3);
+}
+.feedback-box.wrong-fb {
+  background: rgba(241,107,107,0.08);
+  border: 1px solid rgba(241,107,107,0.3);
+}
+.fb-title {
+  font-weight:700;
+  font-size:0.9rem;
+  margin-bottom:6px;
+  display:flex; align-items:center; gap:8px;
+}
+.fb-title.ok { color:var(--green); }
+.fb-title.nope { color:var(--red); }
+.fb-explain {
+  font-size:0.85rem;
+  color:var(--muted2);
+  line-height:1.65;
+}
+.fb-explain strong { color:var(--text); }
+
+/* NEXT BTN */
+.next-btn {
+  width:100%;
+  padding:16px;
+  background: var(--accent);
+  color:#0f1117;
+  border:none;
+  border-radius:12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:1rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:none;
+  letter-spacing:0.3px;
+}
+.next-btn.show { display:block; }
+.next-btn:hover { background:#f5c842; transform:translateY(-2px); box-shadow:0 8px 24px rgba(240,180,41,0.3); }
+
+/* ===== RESULT SCREEN ===== */
+#result {
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+  text-align:center;
+}
+
+.result-icon {
+  font-size:4rem;
+  margin-bottom:20px;
+  animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.result-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.5rem,8vw,5rem);
+  letter-spacing:2px;
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+
+.result-score-big {
+  font-family:'DM Mono',monospace;
+  font-size:clamp(1.5rem,5vw,2.5rem);
+  color:var(--accent);
+  margin:16px 0;
+  animation:fadeUp 0.5s 0.2s ease both;
+}
+
+.result-msg {
+  color:var(--muted2);
+  max-width:420px;
+  line-height:1.7;
+  margin-bottom:36px;
+  animation:fadeUp 0.5s 0.3s ease both;
+}
+
+.result-bars {
+  width:100%;
+  max-width:500px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-bottom:40px;
+  animation:fadeUp 0.5s 0.4s ease both;
+}
+.result-bar-row {
+  display:grid;
+  grid-template-columns: 180px 1fr 48px;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+}
+.result-bar-label {
+  font-size:0.78rem;
+  color:var(--muted2);
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.result-bar-track {
+  height:8px;
+  background:var(--border);
+  border-radius:4px;
+  overflow:hidden;
+}
+.result-bar-fill {
+  height:100%;
+  border-radius:4px;
+  --w:0%;
+  width:var(--w);
+  animation: slideRight 0.8s 0.6s cubic-bezier(0.4,0,0.2,1) both;
+}
+.result-bar-pct {
+  font-family:'DM Mono',monospace;
+  font-size:0.7rem;
+  color:var(--accent);
+  text-align:right;
+}
+
+.restart-btn {
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--accent);
+  color:#0f1117;
+  border:none;
+  padding:16px 40px;
+  border-radius:12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:1rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s;
+  animation:fadeUp 0.5s 0.5s ease both;
+}
+.restart-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(240,180,41,0.3); }
+
+/* Confetti bits */
+.confetti-wrap { position:fixed; inset:0; pointer-events:none; z-index:50; }
+.confetti-piece {
+  position:absolute;
+  width:8px; height:8px;
+  border-radius:2px;
+  animation: confFall linear both;
+}
+@keyframes confFall {
+  0% { transform:translateY(-20px) rotate(0deg); opacity:1; }
+  100% { transform:translateY(110vh) rotate(720deg); opacity:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== WELCOME ===== -->
+<div class="screen active" id="welcome">
+  <div class="logo-badge"><span class="logo-dot"></span> TRADING SCHOOL · NIVEAU DÉBUTANT</div>
+  <h1 class="welcome-title">APPRENDS<br><span>LE TRADING</span><br>EN JOUANT</h1>
+  <p class="welcome-sub">4 modules essentiels. Quiz visuels avec graphiques réels. Réponds, apprends, progresse.</p>
+
+  <div class="modules-preview">
+    <div class="module-tag"><span class="dot" style="background:#f0b429"></span> Styles de Trading</div>
+    <div class="module-tag"><span class="dot" style="background:#4f8ef7"></span> Bull Flag & Bear Flag</div>
+    <div class="module-tag"><span class="dot" style="background:#3ecf8e"></span> Support & Résistance</div>
+    <div class="module-tag"><span class="dot" style="background:#f16b6b"></span> Accum. / Distrib. / Manip.</div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">
+    ▶ &nbsp;COMMENCER LE JEU
+  </button>
+</div>
+
+<!-- ===== GAME ===== -->
+<div class="screen" id="game">
+  <div class="topbar">
+    <div class="module-label" id="module-label">MODULE 1</div>
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span id="q-counter">Question 1/20</span>
+        <span id="q-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="score-badge" id="score-badge">✦ 0 pts</div>
+  </div>
+
+  <div class="q-card" id="q-card">
+    <div class="q-number" id="q-number">QUESTION 01</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="chart-container" id="chart-wrap" style="display:none">
+      <div class="chart-label">📊 GRAPHIQUE — ANALYSE LE PATTERN</div>
+      <div id="chart-svg"></div>
+    </div>
+    <div class="options" id="options"></div>
+  </div>
+
+  <div class="feedback-box" id="feedback">
+    <div class="fb-title" id="fb-title"></div>
+    <div class="fb-explain" id="fb-explain"></div>
+  </div>
+
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">QUESTION SUIVANTE →</button>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div class="screen" id="result">
+  <div class="confetti-wrap" id="confetti"></div>
+  <div class="result-icon" id="result-icon">🏆</div>
+  <h2 class="result-title" id="result-title">EXCELLENT !</h2>
+  <div class="result-score-big" id="result-score-big"></div>
+  <p class="result-msg" id="result-msg"></p>
+  <div class="result-bars" id="result-bars"></div>
+  <button class="restart-btn" onclick="restartGame()">↺ &nbsp;REJOUER</button>
+</div>
+
+<script>
+// ============================================================
+// QUESTIONS DATA
+// ============================================================
+const QUESTIONS = [
+
+  // ── MODULE 1 : STYLES DE TRADING ──
+  {
+    module: "📈 STYLES DE TRADING",
+    moduleColor: "#f0b429",
+    text: "Un trader ouvre et ferme ses positions dans la même journée, sans jamais garder de trade ouvert la nuit. Quel style de trading décrit-on ?",
+    chart: null,
+    options: ["Swing Trading", "Day Trading", "Scalping", "Position Trading"],
+    correct: 1,
+    explanation: "Le <strong>Day Trading</strong> consiste à ouvrir ET fermer toutes ses positions dans la même journée. Le trader ne garde jamais de position ouverte pendant la nuit pour éviter le risque de gap (saut de prix) nocturne."
+  },
+  {
+    module: "📈 STYLES DE TRADING",
+    moduleColor: "#f0b429",
+    text: "Ce style de trading vise des dizaines de petits profits par jour, avec des trades qui durent seulement quelques secondes à quelques minutes. On parle de…",
+    chart: null,
+    options: ["Day Trading", "Swing Trading", "Scalping", "Invest. long terme"],
+    correct: 2,
+    explanation: "Le <strong>Scalping</strong> est le style le plus rapide : on prend des dizaines de micro-trades par jour, chaque profit est minuscule mais s'accumule. Il nécessite une grande concentration et des frais de courtage très bas."
+  },
+  {
+    module: "📈 STYLES DE TRADING",
+    moduleColor: "#f0b429",
+    text: "Marie ouvre un trade sur EUR/USD lundi matin et le ferme vendredi soir après 4 jours. Elle profite des grandes oscillations de prix de la semaine. Quel est son style ?",
+    chart: null,
+    options: ["Scalping", "Day Trading", "Swing Trading", "HFT"],
+    correct: 2,
+    explanation: "Le <strong>Swing Trading</strong> capture les 'swings' (oscillations) du marché sur plusieurs jours à plusieurs semaines. C'est le style idéal pour les débutants car il laisse le temps de réfléchir et ne nécessite pas d'être devant l'écran toute la journée."
+  },
+  {
+    module: "📈 STYLES DE TRADING",
+    moduleColor: "#f0b429",
+    text: "Quel style de trading nécessite LE PLUS de temps devant l'écran au quotidien ?",
+    chart: null,
+    options: ["Swing Trading", "Scalping", "Position Trading", "Investissement"],
+    correct: 1,
+    explanation: "Le <strong>Scalping</strong> demande une présence quasi permanente devant les écrans. Un scalpeur peut passer 6 à 10 heures par jour à trader, en analysant des graphiques de 1 à 5 minutes, réagissant en quelques secondes."
+  },
+  {
+    module: "📈 STYLES DE TRADING",
+    moduleColor: "#f0b429",
+    text: "Pour un débutant complet qui travaille à temps plein, quel style de trading est le plus ADAPTÉ pour commencer ?",
+    chart: null,
+    options: ["Scalping (1min)", "Day Trading (15min)", "Swing Trading (1j-1sem)", "HFT automatisé"],
+    correct: 2,
+    explanation: "Le <strong>Swing Trading</strong> est parfait pour commencer : les trades durent plusieurs jours, on peut analyser le soir après le travail, et on a le temps de réfléchir. Le scalping et day trading demandent une disponibilité totale et des années d'expérience."
+  },
+
+  // ── MODULE 2 : BULL FLAG & BEAR FLAG ──
+  {
+    module: "🚩 BULL FLAG & BEAR FLAG",
+    moduleColor: "#4f8ef7",
+    text: "Regarde ce graphique. On voit une forte hausse (le mât), puis une consolidation légèrement descendante (le drapeau). Ce pattern s'appelle…",
+    chart: "bull_flag",
+    options: ["Bear Flag", "Double Sommet", "Bull Flag", "Tête-Épaules"],
+    correct: 2,
+    explanation: "C'est un <strong>Bull Flag</strong> (Drapeau Haussier) ! La forte montée = le <strong>mât</strong>. La petite consolidation en légère baisse = le <strong>drapeau</strong>. La cassure vers le haut du drapeau est le signal d'achat. Ce pattern anticipe une continuation de la hausse."
+  },
+  {
+    module: "🚩 BULL FLAG & BEAR FLAG",
+    moduleColor: "#4f8ef7",
+    text: "Dans un Bull Flag, après la phase de consolidation (drapeau), que doit-il se passer pour confirmer le pattern ?",
+    chart: null,
+    options: ["Le prix continue de baisser", "Le prix casse à la hausse le haut du drapeau", "Le prix reste immobile", "Le volume disparaît complètement"],
+    correct: 1,
+    explanation: "La <strong>cassure haussière</strong> au-dessus du drapeau confirme le Bull Flag. Idéalement avec un <strong>volume en hausse</strong> lors de la cassure. L'objectif de prix = hauteur du mât projetée depuis le point de cassure."
+  },
+  {
+    module: "🚩 BULL FLAG & BEAR FLAG",
+    moduleColor: "#4f8ef7",
+    text: "Observe ce graphique. Forte baisse (mât), puis consolidation légèrement montante (drapeau inversé). Quel est ce pattern ?",
+    chart: "bear_flag",
+    options: ["Bull Flag", "Bear Flag", "Triangle Ascendant", "Biseau Haussier"],
+    correct: 1,
+    explanation: "C'est un <strong>Bear Flag</strong> (Drapeau Baissier) ! Forte baisse = le mât. Petite remontée en consolidation = le drapeau (inversé). Quand le prix casse à la baisse, c'est le signal de vente. Il anticipe une continuation de la baisse."
+  },
+  {
+    module: "🚩 BULL FLAG & BEAR FLAG",
+    moduleColor: "#4f8ef7",
+    text: "Quelle est la principale caractéristique du 'mât' dans un Flag pattern (Bull ou Bear) ?",
+    chart: null,
+    options: ["Un mouvement lent et progressif", "Un mouvement fort, rapide, avec un gros volume", "Un mouvement horizontal", "Un mouvement en zigzag"],
+    correct: 1,
+    explanation: "Le <strong>mât</strong> est un mouvement fort, rapide et directionnel, généralement accompagné d'un <strong>volume élevé</strong>. C'est l'élan initial du marché. Sans un mât fort et clair, le pattern n'est pas valide."
+  },
+  {
+    module: "🚩 BULL FLAG & BEAR FLAG",
+    moduleColor: "#4f8ef7",
+    text: "Un trader voit un Bull Flag se former. À quel moment est-il OPTIMAL d'entrer en achat ?",
+    chart: null,
+    options: ["Pendant la formation du mât", "Au milieu du drapeau (consolidation)", "À la cassure du haut du drapeau, avec confirmation", "Après que le prix ait déjà monté 10%"],
+    correct: 2,
+    explanation: "L'entrée optimale se fait à la <strong>cassure du haut du drapeau</strong>, idéalement confirmée par une bougie de clôture au-dessus. Entrer trop tôt (pendant le drapeau) expose au risque de fausse cassure. Trop tard = ratio risque/récompense dégradé."
+  },
+
+  // ── MODULE 3 : SUPPORT & RÉSISTANCE ──
+  {
+    module: "📊 SUPPORT & RÉSISTANCE",
+    moduleColor: "#3ecf8e",
+    text: "Regarde ce graphique. Le prix rebondit 3 fois au même niveau bas sans jamais le franchir. Ce niveau s'appelle…",
+    chart: "support",
+    options: ["Une résistance", "Un support", "Une tendance", "Un pivot"],
+    correct: 1,
+    explanation: "C'est un <strong>Support</strong> ! Un support est un niveau de prix où la <strong>demande des acheteurs est assez forte</strong> pour empêcher le prix de descendre davantage. Plus il y a de rebonds au même niveau, plus le support est fort."
+  },
+  {
+    module: "📊 SUPPORT & RÉSISTANCE",
+    moduleColor: "#3ecf8e",
+    text: "Le prix monte, atteint le même niveau 3 fois sans jamais le franchir et repart à la baisse à chaque fois. Ce niveau est…",
+    chart: "resistance",
+    options: ["Un support fort", "Une résistance", "Un creux", "Une bougie Doji"],
+    correct: 1,
+    explanation: "C'est une <strong>Résistance</strong> ! C'est un niveau où les <strong>vendeurs dominent les acheteurs</strong> : le prix n'arrive pas à monter au-delà. Psychologiquement, les traders qui ont acheté haut veulent 'récupérer' et vendent dès que le prix revient."
+  },
+  {
+    module: "📊 SUPPORT & RÉSISTANCE",
+    moduleColor: "#3ecf8e",
+    text: "Un support est cassé à la baisse avec un fort volume. Que devient souvent ce niveau selon le 'principe de polarité' ?",
+    chart: null,
+    options: ["Il reste un support", "Il disparaît et n'a plus d'importance", "Il devient une résistance", "Il devient un pivot neutre"],
+    correct: 2,
+    explanation: "C'est le <strong>principe de polarité</strong> : un support cassé devient une résistance, et une résistance cassée devient un support. C'est l'un des concepts les plus puissants du trading technique. Les anciens acheteurs piégés vendent dès que le prix remonte."
+  },
+  {
+    module: "📊 SUPPORT & RÉSISTANCE",
+    moduleColor: "#3ecf8e",
+    text: "Comment peut-on renforcer la fiabilité d'un niveau de support ou résistance ?",
+    chart: null,
+    options: ["Plus il a été testé de fois, plus il est fort", "Plus il est récent, moins il vaut", "S'il n'a été touché qu'une seule fois, c'est le meilleur", "Les supports et résistances sont tous équivalents"],
+    correct: 0,
+    explanation: "Un niveau testé <strong>plusieurs fois</strong> est bien plus fiable. Chaque rebond confirme que beaucoup de traders surveillent ce niveau. Un niveau touché 5 fois a plus de valeur qu'un niveau touché 2 fois. On cherche aussi la confluence avec d'autres indicateurs."
+  },
+  {
+    module: "📊 SUPPORT & RÉSISTANCE",
+    moduleColor: "#3ecf8e",
+    text: "Quelle est la MEILLEURE stratégie pour trader un support solide testé 4 fois ?",
+    chart: null,
+    options: ["Vendre dès que le prix approche du support", "Acheter au support avec un stop loss juste en dessous", "Attendre que le support soit cassé pour acheter", "Ignorer le support, il n'a pas d'importance"],
+    correct: 1,
+    explanation: "La stratégie classique : <strong>acheter au support</strong> (zone de rebond) avec un <strong>stop loss juste en dessous</strong> du support. Ainsi, si le support casse, on est sorti automatiquement avec une petite perte. Le ratio risque/récompense est favorable."
+  },
+
+  // ── MODULE 4 : ACCUMULATION / DISTRIBUTION / MANIPULATION ──
+  {
+    module: "🎯 ACCUM. / DISTRIB. / MANIP.",
+    moduleColor: "#f16b6b",
+    text: "Les 'gros acteurs' (institutions, baleines) achètent discrètement de grandes quantités sans faire monter le prix, en étalant leurs achats dans le temps. C'est…",
+    chart: "accumulation",
+    options: ["Une distribution", "Une manipulation", "Une accumulation", "Un short squeeze"],
+    correct: 2,
+    explanation: "C'est l'<strong>Accumulation</strong> ! Les gros acteurs accumulent silencieusement des positions en zone de bas prix, en achetant progressivement pour ne pas faire monter les prix trop vite. Cette phase précède souvent une forte hausse. Visuellement : prix qui 'range' (consolide) en bas."
+  },
+  {
+    module: "🎯 ACCUM. / DISTRIB. / MANIP.",
+    moduleColor: "#f16b6b",
+    text: "Après une longue hausse, les gros acteurs revendent graduellement leurs positions aux particuliers qui achètent euphoriquement. Cette phase s'appelle…",
+    chart: null,
+    options: ["Accumulation", "Distribution", "Mark-up", "Manipulation à la hausse"],
+    correct: 1,
+    explanation: "C'est la <strong>Distribution</strong> ! Les institutions vendent (distribuent) leurs positions aux particuliers qui achètent par FOMO (peur de rater la hausse). La distribution se passe souvent en zone de hauts prix. Elle précède généralement une forte baisse."
+  },
+  {
+    module: "🎯 ACCUM. / DISTRIB. / MANIP.",
+    moduleColor: "#f16b6b",
+    text: "Le prix descend brusquement sous un support important, déclenchant les stop loss de milliers de traders, puis remonte immédiatement comme si rien ne s'était passé. C'est une…",
+    chart: "manipulation",
+    options: ["Accumulation normale", "Manipulation (stop hunt / fakeout)", "Distribution classique", "Cassure haussière réelle"],
+    correct: 1,
+    explanation: "C'est une <strong>Manipulation</strong> (aussi appelée 'Stop Hunt' ou 'Fakeout'). Les gros acteurs font chuter le prix <em>exprès</em> sous le support pour déclencher les stop loss des petits traders et acheter à bas prix avant la vraie hausse. C'est légal mais déloyal."
+  },
+  {
+    module: "🎯 ACCUM. / DISTRIB. / MANIP.",
+    moduleColor: "#f16b6b",
+    text: "Dans la théorie de Wyckoff, quelle est l'ordre correct des phases du marché ?",
+    chart: null,
+    options: [
+      "Distribution → Accumulation → Hausse → Baisse",
+      "Accumulation → Hausse (Mark-up) → Distribution → Baisse (Mark-down)",
+      "Hausse → Accumulation → Baisse → Distribution",
+      "Manipulation → Accumulation → Distribution → Neutre"
+    ],
+    correct: 1,
+    explanation: "Selon <strong>Wyckoff</strong>, le cycle est : <strong>Accumulation</strong> (les pros achètent discrètement) → <strong>Mark-up</strong> (hausse visible) → <strong>Distribution</strong> (les pros revendent) → <strong>Mark-down</strong> (baisse). Comprendre ce cycle permet d'anticiper les grands mouvements."
+  },
+  {
+    module: "🎯 ACCUM. / DISTRIB. / MANIP.",
+    moduleColor: "#f16b6b",
+    text: "Comment reconnaître une phase d'accumulation sur un graphique ?",
+    chart: null,
+    options: [
+      "Fort volume avec price action explosive à la hausse",
+      "Prix en range horizontal (consolidation) avec volume décroissant, après une baisse",
+      "Prix qui chute verticalement sans rebond",
+      "Prix qui monte puis crée des sommets de plus en plus bas"
+    ],
+    correct: 1,
+    explanation: "L'accumulation se reconnaît à : <strong>prix en range</strong> (latéral) après une baisse, <strong>volume qui diminue</strong> progressivement (les vendeurs s'épuisent), et parfois des petites manipulations à la baisse (springs) pour déclencher les stops avant la vraie hausse."
+  }
+];
+
+// ============================================================
+// SVG CHARTS
+// ============================================================
+function getChart(type) {
+  const charts = {
+    bull_flag: `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3ecf8e" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#3ecf8e" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid -->
+      <line x1="0" y1="60" x2="560" y2="60" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="100" x2="560" y2="100" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="140" x2="560" y2="140" stroke="#252d42" stroke-width="1"/>
+      <!-- Mât (forte hausse) -->
+      <polyline points="30,155 60,145 90,130 120,110 150,80 180,45" fill="none" stroke="#3ecf8e" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Drapeau (légère consolidation) -->
+      <polyline points="180,45 210,52 240,58 270,65 300,72 330,78" fill="none" stroke="#f0b429" stroke-width="2" stroke-dasharray="5,3"/>
+      <!-- Cassure haussière -->
+      <polyline points="330,78 360,55 400,30 440,15" fill="none" stroke="#3ecf8e" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Flèche cassure -->
+      <polygon points="450,12 438,22 436,8" fill="#3ecf8e"/>
+      <!-- Labels -->
+      <rect x="30" y="148" width="34" height="16" rx="3" fill="rgba(62,207,142,0.15)"/>
+      <text x="47" y="159" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">MÂT</text>
+      <rect x="230" y="38" width="60" height="16" rx="3" fill="rgba(240,180,41,0.15)"/>
+      <text x="260" y="49" fill="#f0b429" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">DRAPEAU</text>
+      <rect x="395" y="6" width="90" height="16" rx="3" fill="rgba(62,207,142,0.2)"/>
+      <text x="440" y="17" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">CONTINUATION ↑</text>
+      <!-- Ligne cassure verticale -->
+      <line x1="330" y1="0" x2="330" y2="180" stroke="rgba(240,180,41,0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="332" y="170" fill="rgba(240,180,41,0.7)" font-size="8" font-family="DM Mono,monospace">CASSURE</text>
+    </svg>`,
+
+    bear_flag: `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid -->
+      <line x1="0" y1="40" x2="560" y2="40" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="90" x2="560" y2="90" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="140" x2="560" y2="140" stroke="#252d42" stroke-width="1"/>
+      <!-- Mât baissier -->
+      <polyline points="30,25 60,35 90,55 120,75 150,100 180,130" fill="none" stroke="#f16b6b" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Drapeau légère remontée -->
+      <polyline points="180,130 210,122 240,116 270,110 300,104 330,98" fill="none" stroke="#f0b429" stroke-width="2" stroke-dasharray="5,3"/>
+      <!-- Cassure baissière -->
+      <polyline points="330,98 360,122 400,148 440,168" fill="none" stroke="#f16b6b" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Flèche cassure -->
+      <polygon points="442,172 430,162 444,160" fill="#f16b6b"/>
+      <!-- Labels -->
+      <rect x="30" y="16" width="34" height="16" rx="3" fill="rgba(241,107,107,0.15)"/>
+      <text x="47" y="27" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">MÂT</text>
+      <rect x="225" y="90" width="60" height="16" rx="3" fill="rgba(240,180,41,0.15)"/>
+      <text x="255" y="101" fill="#f0b429" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">DRAPEAU</text>
+      <rect x="370" y="162" width="100" height="16" rx="3" fill="rgba(241,107,107,0.2)"/>
+      <text x="420" y="173" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">CONTINUATION ↓</text>
+      <line x1="330" y1="0" x2="330" y2="180" stroke="rgba(240,180,41,0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="332" y="14" fill="rgba(240,180,41,0.7)" font-size="8" font-family="DM Mono,monospace">CASSURE</text>
+    </svg>`,
+
+    support: `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid -->
+      <line x1="0" y1="50" x2="560" y2="50" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="100" x2="560" y2="100" stroke="#252d42" stroke-width="1"/>
+      <!-- Ligne de support -->
+      <line x1="0" y1="138" x2="560" y2="138" stroke="#3ecf8e" stroke-width="2" stroke-dasharray="6,4"/>
+      <text x="490" y="133" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace">SUPPORT</text>
+      <!-- Prix oscille et rebondit 3 fois -->
+      <polyline points="30,80 70,60 100,138 140,75 190,55 240,138 280,90 330,65 390,138 430,100 480,70 540,55"
+        fill="none" stroke="#4f8ef7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Cercles de rebond -->
+      <circle cx="100" cy="138" r="7" fill="rgba(62,207,142,0.2)" stroke="#3ecf8e" stroke-width="2"/>
+      <text x="100" y="155" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">①</text>
+      <circle cx="240" cy="138" r="7" fill="rgba(62,207,142,0.2)" stroke="#3ecf8e" stroke-width="2"/>
+      <text x="240" y="155" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">②</text>
+      <circle cx="390" cy="138" r="7" fill="rgba(62,207,142,0.2)" stroke="#3ecf8e" stroke-width="2"/>
+      <text x="390" y="155" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">③</text>
+      <text x="20" y="170" fill="rgba(62,207,142,0.6)" font-size="8" font-family="DM Mono,monospace">3 REBONDS AU MÊME NIVEAU → SUPPORT VALIDÉ</text>
+    </svg>`,
+
+    resistance: `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid -->
+      <line x1="0" y1="80" x2="560" y2="80" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="130" x2="560" y2="130" stroke="#252d42" stroke-width="1"/>
+      <!-- Ligne de résistance -->
+      <line x1="0" y1="42" x2="560" y2="42" stroke="#f16b6b" stroke-width="2" stroke-dasharray="6,4"/>
+      <text x="460" y="37" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace">RÉSISTANCE</text>
+      <!-- Prix monte et rejette 3 fois -->
+      <polyline points="30,130 70,90 100,42 140,110 190,140 240,42 280,100 330,130 390,42 430,90 480,120 540,150"
+        fill="none" stroke="#4f8ef7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Cercles de rejet -->
+      <circle cx="100" cy="42" r="7" fill="rgba(241,107,107,0.2)" stroke="#f16b6b" stroke-width="2"/>
+      <text x="100" y="25" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">①</text>
+      <circle cx="240" cy="42" r="7" fill="rgba(241,107,107,0.2)" stroke="#f16b6b" stroke-width="2"/>
+      <text x="240" y="25" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">②</text>
+      <circle cx="390" cy="42" r="7" fill="rgba(241,107,107,0.2)" stroke="#f16b6b" stroke-width="2"/>
+      <text x="390" y="25" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">③</text>
+      <text x="20" y="170" fill="rgba(241,107,107,0.6)" font-size="8" font-family="DM Mono,monospace">3 REJETS AU MÊME NIVEAU → RÉSISTANCE VALIDÉE</text>
+    </svg>`,
+
+    accumulation: `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid -->
+      <line x1="0" y1="60" x2="560" y2="60" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="110" x2="560" y2="110" stroke="#252d42" stroke-width="1"/>
+      <!-- Baisse initiale -->
+      <polyline points="20,30 60,50 100,80 140,110 170,130" fill="none" stroke="#f16b6b" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Zone d'accumulation (range) -->
+      <rect x="175" y="118" width="220" height="30" rx="4" fill="rgba(62,207,142,0.06)" stroke="rgba(62,207,142,0.2)" stroke-dasharray="4,3"/>
+      <polyline points="170,130 200,135 230,127 260,133 290,125 320,131 395,128" fill="none" stroke="#f0b429" stroke-width="2" stroke-linecap="round"/>
+      <text x="265" y="167" fill="rgba(240,180,41,0.8)" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">ACCUMULATION (RANGE)</text>
+      <!-- Mark-up / hausse explosive -->
+      <polyline points="395,128 430,100 460,70 490,40 520,18" fill="none" stroke="#3ecf8e" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Flèche hausse -->
+      <polygon points="522,14 510,26 524,28" fill="#3ecf8e"/>
+      <text x="500" y="45" fill="#3ecf8e" font-size="9" font-family="DM Mono,monospace">MARK-UP ↑</text>
+      <!-- Labels phases -->
+      <text x="80" y="22" fill="rgba(241,107,107,0.7)" font-size="8" font-family="DM Mono,monospace">BAISSE</text>
+    </svg>`,
+
+    manipulation: `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid -->
+      <line x1="0" y1="70" x2="560" y2="70" stroke="#252d42" stroke-width="1"/>
+      <line x1="0" y1="120" x2="560" y2="120" stroke="#252d42" stroke-width="1"/>
+      <!-- Support line -->
+      <line x1="0" y1="115" x2="560" y2="115" stroke="#3ecf8e" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="8" y="110" fill="rgba(62,207,142,0.7)" font-size="8" font-family="DM Mono,monospace">SUPPORT</text>
+      <!-- Prix stable avant -->
+      <polyline points="20,80 60,85 100,78 140,82 180,80 220,84 260,80" fill="none" stroke="#4f8ef7" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Chute manipulation (spike bas) -->
+      <polyline points="260,80 275,90 285,115 290,145 295,115 305,85 320,80" fill="none" stroke="#f16b6b" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Zone de spike -->
+      <circle cx="290" cy="148" r="8" fill="rgba(241,107,107,0.25)" stroke="#f16b6b" stroke-width="2"/>
+      <!-- Reprise rapide -->
+      <polyline points="320,80 360,75 400,70 440,62 490,55 540,48" fill="none" stroke="#3ecf8e" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Flèche -->
+      <polygon points="542,44 530,56 544,58" fill="#3ecf8e"/>
+      <!-- Labels -->
+      <text x="270" y="168" fill="#f16b6b" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">STOP HUNT !</text>
+      <text x="430" y="45" fill="#3ecf8e" font-size="8" font-family="DM Mono,monospace">VRAIE DIRECTION ↑</text>
+      <text x="20" y="172" fill="rgba(241,107,107,0.5)" font-size="7.5" font-family="DM Mono,monospace">LES STOPS SONT DÉCLENCHÉS → LES PROS ACHÈTENT PAS CHER</text>
+    </svg>`
+  };
+  return charts[type] || null;
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let shuffled = [];
+let current = 0;
+let score = 0;
+let answered = false;
+let moduleScores = {};
+
+// Module score tracking
+const MODULES = ["📈 STYLES DE TRADING","🚩 BULL FLAG & BEAR FLAG","📊 SUPPORT & RÉSISTANCE","🎯 ACCUM. / DISTRIB. / MANIP."];
+MODULES.forEach(m => moduleScores[m] = { correct: 0, total: 0 });
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  shuffled = shuffle(QUESTIONS);
+  current = 0; score = 0; answered = false;
+  MODULES.forEach(m => moduleScores[m] = { correct: 0, total: 0 });
+  showScreen('game');
+  renderQuestion();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function renderQuestion() {
+  const q = shuffled[current];
+  answered = false;
+
+  // Top bar
+  const pct = Math.round((current / shuffled.length) * 100);
+  document.getElementById('module-label').textContent = q.module;
+  document.getElementById('module-label').style.color = q.moduleColor;
+  document.getElementById('module-label').style.background = q.moduleColor + '18';
+  document.getElementById('module-label').style.borderColor = q.moduleColor + '40';
+  document.getElementById('q-counter').textContent = `Question ${current + 1}/${shuffled.length}`;
+  document.getElementById('q-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('score-badge').textContent = `✦ ${score} pts`;
+
+  // Q card re-animate
+  const card = document.getElementById('q-card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both';
+
+  document.getElementById('q-number').textContent = `QUESTION ${String(current + 1).padStart(2,'0')}`;
+  document.getElementById('q-text').textContent = q.text;
+
+  // Chart
+  const chartWrap = document.getElementById('chart-wrap');
+  if (q.chart) {
+    chartWrap.style.display = 'block';
+    document.getElementById('chart-svg').innerHTML = getChart(q.chart);
+  } else {
+    chartWrap.style.display = 'none';
+  }
+
+  // Options
+  const optDiv = document.getElementById('options');
+  optDiv.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i, btn);
+    optDiv.appendChild(btn);
+  });
+
+  // Feedback & next
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback-box';
+  document.getElementById('next-btn').className = 'next-btn';
+}
+
+function selectAnswer(idx, btn) {
+  if (answered) return;
+  answered = true;
+  const q = shuffled[current];
+  moduleScores[q.module].total++;
+
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  if (idx === q.correct) {
+    btn.classList.add('correct');
+    score += 10;
+    moduleScores[q.module].correct++;
+    document.getElementById('score-badge').textContent = `✦ ${score} pts`;
+    fb.className = 'feedback-box correct-fb show';
+    document.getElementById('fb-title').innerHTML = `<span class="ok">✓ CORRECT !</span>`;
+  } else {
+    btn.classList.add('wrong');
+    allBtns[q.correct].classList.add('correct');
+    fb.className = 'feedback-box wrong-fb show';
+    document.getElementById('fb-title').innerHTML = `<span class="nope">✗ PRESQUE !</span>`;
+  }
+  document.getElementById('fb-explain').innerHTML = q.explanation;
+  document.getElementById('next-btn').className = 'next-btn show';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= shuffled.length) {
+    showResult();
+  } else {
+    renderQuestion();
+    document.getElementById('feedback').className = 'feedback-box';
+    document.getElementById('next-btn').className = 'next-btn';
+  }
+}
+
+function showResult() {
+  showScreen('result');
+  const total = shuffled.length;
+  const pct = Math.round((score / (total * 10)) * 100);
+
+  let icon, title, msg;
+  if (pct >= 80) {
+    icon = '🏆'; title = 'EXCELLENT !'; msg = 'Tu maîtrises les bases du trading. Continue à pratiquer et passe à la suite de ta formation !';
+    launchConfetti();
+  } else if (pct >= 60) {
+    icon = '🎯'; title = 'BIEN JOUÉ !'; msg = 'Bonne compréhension globale. Relis les explications des questions ratées pour consolider tes bases.';
+  } else if (pct >= 40) {
+    icon = '📚'; title = 'EN PROGRÈS'; msg = 'Les bases sont là. Rejoue pour solidifier ta compréhension des concepts — c\'est normal de devoir réviser plusieurs fois.';
+  } else {
+    icon = '💪'; title = 'CONTINUE !'; msg = 'Le trading demande de la pratique. Relis les explications et rejoue — chaque tentative t\'apprend quelque chose !';
+  }
+
+  document.getElementById('result-icon').textContent = icon;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-score-big').textContent = `${score} / ${total * 10} points — ${pct}%`;
+  document.getElementById('result-msg').textContent = msg;
+
+  // Module bars
+  const barsDiv = document.getElementById('result-bars');
+  barsDiv.innerHTML = '';
+  MODULES.forEach(m => {
+    const s = moduleScores[m];
+    if (s.total === 0) return;
+    const p = Math.round((s.correct / s.total) * 100);
+    const colors = {"📈 STYLES DE TRADING":"#f0b429","🚩 BULL FLAG & BEAR FLAG":"#4f8ef7","📊 SUPPORT & RÉSISTANCE":"#3ecf8e","🎯 ACCUM. / DISTRIB. / MANIP.":"#f16b6b"};
+    const col = colors[m] || '#f0b429';
+    const shortName = m.replace(/^.{2}\s/,'');
+    const row = document.createElement('div');
+    row.className = 'result-bar-row';
+    row.innerHTML = `
+      <div class="result-bar-label">${shortName}</div>
+      <div class="result-bar-track">
+        <div class="result-bar-fill" style="--w:${p}%; background:${col}"></div>
+      </div>
+      <div class="result-bar-pct">${p}%</div>
+    `;
+    barsDiv.appendChild(row);
+  });
+}
+
+function launchConfetti() {
+  const wrap = document.getElementById('confetti');
+  wrap.innerHTML = '';
+  const colors = ['#f0b429','#3ecf8e','#4f8ef7','#f16b6b','#fff'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      left:${Math.random()*100}%;
+      top:-10px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${6+Math.random()*8}px;
+      height:${6+Math.random()*8}px;
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      animation-duration:${2+Math.random()*2}s;
+      animation-delay:${Math.random()*0.8}s;
+      transform:rotate(${Math.random()*360}deg);
+    `;
+    wrap.appendChild(piece);
+  }
+  setTimeout(() => wrap.innerHTML = '', 4000);
+}
+
+function restartGame() {
+  startGame();
+}
+</script>
+</body>
+</html>
